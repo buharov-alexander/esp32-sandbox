@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "author": "ESP32-S3 Robot",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 73.67,
+      "left": -55.52,
+      "rotate": 90,
+      "attrs": {}
+    },
+    { "type": "wokwi-ili9341", "id": "tft", "top": -354.4, "left": -326.7, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "tft:GND", "esp:GND.1", "black", [ "v220.8", "h163.2" ] ],
+    [ "tft:VCC", "esp:5V", "red", [ "v211.2", "h182.4" ] ],
+    [ "tft:CS", "esp:15", "yellow", [ "v201.6", "h288" ] ],
+    [ "tft:SCK", "esp:12", "blue", [ "v163.2", "h153.59" ] ],
+    [ "tft:MOSI", "esp:11", "purple", [ "v172.8", "h172.79" ] ],
+    [ "tft:D/C", "esp:5", "orange", [ "v182.4", "h297.6" ] ],
+    [ "tft:LED", "esp:6", "green", [ "v153.6", "h259.19" ] ],
+    [ "tft:SCL", "esp:8", "blue", [] ],
+    [ "tft:SDA", "esp:10", "gold", [] ],
+    [ "tft:RST", "esp:4", "pink", [ "v192", "h316.8" ] ],
+    [ "tft:MISO", "esp:13", "green", [ "v144", "h124.79" ] ]
+  ],
+  "serialMonitor": { "convertEol": true, "display": "always" },
+  "dependencies": {}
+}
