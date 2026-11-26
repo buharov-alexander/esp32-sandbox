@@ -4,18 +4,11 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 
+#include "expressions/RobotExpression.h"
+
 class RobotEyes {
 
 public:
-
-    enum class Expression {
-        NEUTRAL,
-        HAPPY,
-        SAD,
-        ANGRY,
-        SURPRISED,
-        SLEEPY
-    };
 
     enum class Direction {
         LEFT,
@@ -47,7 +40,6 @@ private:
 
     static const int LEFT_EYE_X = 30;
     static const int RIGHT_EYE_X = 128;
-
     static const int EYE_Y = 15;
 
     enum BlinkState {
@@ -74,20 +66,21 @@ private:
 
     bool manualLook = false;
 
-    void drawEyes();
+    void renderEyes();
 
     void drawEye(
         int x,
-        int y,
         int pupilX,
         int pupilY,
-        int height
+        const EyeStyle& style
     );
 
-    void drawEyebrows(int x, int y);
-
-    void renderEyes();
+    void drawEyebrows(
+        int x,
+        const EyeStyle& style
+    );
 
     void updateLook();
     void updateBlink();
+
 };

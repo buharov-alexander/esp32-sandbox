@@ -1,4 +1,11 @@
-#include "RobotEyes.h"
+#include <math.h>
+
+#include "display/RobotEyes.h"
+#include "expressions/RobotExpressions.h"
+
+// --------------------------------------------------
+// Constructor
+// --------------------------------------------------
 
 RobotEyes::RobotEyes(Adafruit_ILI9341& display)
     : tft(display),
@@ -83,95 +90,54 @@ void RobotEyes::blink() {
 
 void RobotEyes::drawEye(
     int x,
-    int y,
     int pupilX,
     int pupilY,
-    int height
+    const EyeStyle& style
 ) {
 
-    int currentHeight = height;
-    int currentWidth = EYE_WIDTH;
-
-    switch (expression) {
-
-        case Expression::HAPPY:
-            currentHeight = min(currentHeight, 48);
-            break;
-
-        case Expression::SLEEPY:
-            currentHeight = min(currentHeight, 38);
-            break;
-
-        case Expression::SURPRISED:
-            currentHeight = min(EYE_HEIGHT, currentHeight + 15);
-            currentWidth = EYE_WIDTH - 4;
-            break;
-
-        default:
-            break;
-    }
+    int currentHeight = min(style.height, eyeHeight);
 
     int offsetY = (EYE_HEIGHT - currentHeight) / 2;
 
-    int eyeX = x + (EYE_WIDTH - currentWidth) / 2;
+    int eyeX = x + (EYE_WIDTH - style.width) / 2;
 
-    // Almost closed eye
-    if (currentHeight < 15) {
-
-        canvas.drawFastHLine(
-            eyeX + 5,
-            y + EYE_HEIGHT / 2,
-            currentWidth - 10,
-            ILI9341_WHITE
-        );
-
-        return;
-    }
+    int centerX = eyeX + style.width / 2;
+    int centerY = EYE_Y + EYE_HEIGHT / 2;
 
     // Eye white
     canvas.fillRoundRect(
         eyeX,
-        y + offsetY,
-        currentWidth,
+        EYE_Y + offsetY,
+        style.width,
         currentHeight,
-        25,
-        ILI9341_WHITE
+        style.cornerRadius,
+        style.eyeColor
     );
 
-    int centerX = x + EYE_WIDTH / 2;
-    int centerY = y + EYE_HEIGHT / 2;
-
-    pupilX = constrain(pupilX, -12, 12);
-    pupilY = constrain(pupilY, -10, 10);
-
-    int irisRadius = 23;
-    int pupilRadius = 13;
-
-    if (expression == Expression::SURPRISED) {
-        irisRadius = 25;
-        pupilRadius = 14;
-    }
+    // Pupil position
+    int px = centerX + pupilX;
+    int py = centerY + pupilY + style.pupilOffsetY;
 
     // Iris
     canvas.fillCircle(
-        centerX + pupilX,
-        centerY + pupilY,
-        irisRadius,
-        ILI9341_CYAN
+        px,
+        py,
+        style.irisRadius,
+        style.irisColor
     );
 
     // Pupil
     canvas.fillCircle(
-        centerX + pupilX,
-        centerY + pupilY,
-        pupilRadius,
-        ILI9341_BLACK
+        px,
+        py,
+        style.pupilRadius,
+        style.pupilColor
     );
 
     // Reflection
     canvas.fillCircle(
-        centerX + pupilX - 7,
-        centerY + pupilY - 8,
+        px - 7,
+        py - 8,
         5,
         ILI9341_WHITE
     );
@@ -181,85 +147,130 @@ void RobotEyes::drawEye(
 // Eyebrows
 // --------------------------------------------------
 
-void RobotEyes::drawEyebrows(int x, int y) {
+void drawThickLine(
+    GFXcanvas16& canvas,
+    int x0, int y0,
+    int x1, int y1,
+    uint16_t color,
+    int thickness
+) {
+    float dx = x1 - x0;
+    float dy = y1 - y0;
 
-    int width = EYE_WIDTH;
+    float length = sqrt(dx * dx + dy * dy);
+    int steps = max(1, (int)length);
 
-    switch (expression) {
+    int radius = thickness / 2;
 
-        case Expression::ANGRY:
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+
+        int x = x0 + dx * t;
+        int y = y0 + dy * t;
+
+        canvas.fillCircle(x, y, radius, color);
+    }
+}
+
+void RobotEyes::drawEyebrows(
+    int x,
+    const EyeStyle& style
+) {
+
+    int y = 8;
+
+    switch (style.eyebrowStyle) {
+
+        case EyebrowStyle::ANGRY:
 
             if (x == LEFT_EYE_X) {
 
-                canvas.drawLine(
-                    x, y + 5,
-                    x + width, y + 20,
-                    ILI9341_CYAN
+                drawThickLine(
+                    canvas,
+                    x,
+                    y,
+                    x + EYE_WIDTH,
+                    y + 12,
+                    style.eyebrowColor,
+                    6
                 );
 
             } else {
 
-                canvas.drawLine(
-                    x, y + 20,
-                    x + width, y + 5,
-                    ILI9341_CYAN
+                drawThickLine(
+                    canvas,
+                    x,
+                    y + 12,
+                    x + EYE_WIDTH,
+                    y,
+                    style.eyebrowColor,
+                    6
                 );
             }
 
             break;
 
-        case Expression::SAD:
+        case EyebrowStyle::SAD:
 
             if (x == LEFT_EYE_X) {
 
-                canvas.drawLine(
-                    x, y + 15,
-                    x + width, y + 3,
-                    ILI9341_CYAN
+                drawThickLine(
+                    canvas,
+                    x,
+                    y + 12,
+                    x + EYE_WIDTH,
+                    y,
+                    style.eyebrowColor,
+                    6
                 );
 
             } else {
 
-                canvas.drawLine(
-                    x, y + 3,
-                    x + width, y + 15,
-                    ILI9341_CYAN
+                drawThickLine(
+                    canvas,
+                    x,
+                    y,
+                    x + EYE_WIDTH,
+                    y + 12,
+                    style.eyebrowColor,
+                    6
                 );
             }
 
             break;
 
+        case EyebrowStyle::NONE:
         default:
             break;
     }
 }
 
 // --------------------------------------------------
-// Render eyes
+// Render
 // --------------------------------------------------
 
 void RobotEyes::renderEyes() {
 
     canvas.fillScreen(ILI9341_BLACK);
 
+    const EyeStyle& style = RobotExpressions::get(expression);
+
+    drawEyebrows(LEFT_EYE_X, style);
+    drawEyebrows(RIGHT_EYE_X, style);
+
     drawEye(
         LEFT_EYE_X,
-        EYE_Y,
         lookX,
         lookY,
-        eyeHeight
+        style
     );
 
     drawEye(
         RIGHT_EYE_X,
-        EYE_Y,
         lookX,
         lookY,
-        eyeHeight
+        style
     );
-
-    drawEyebrows(LEFT_EYE_X, EYE_Y);
-    drawEyebrows(RIGHT_EYE_X, EYE_Y);
 
     tft.drawRGBBitmap(
         0,
@@ -314,6 +325,7 @@ void RobotEyes::updateBlink() {
             eyeHeight -= 15;
 
             if (eyeHeight <= 5) {
+
                 eyeHeight = 5;
                 blinkState = BLINK_OPENING;
             }
@@ -327,7 +339,6 @@ void RobotEyes::updateBlink() {
             if (eyeHeight >= EYE_HEIGHT) {
 
                 eyeHeight = EYE_HEIGHT;
-
                 blinkState = BLINK_IDLE;
 
                 lastBlink = millis();
